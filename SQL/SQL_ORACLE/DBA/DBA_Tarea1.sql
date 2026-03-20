@@ -1,0 +1,112 @@
+---Tarea 1
+
+DROP TABLE HR_CLOUD.AUDITORIA;
+DROP TABLE HR_CLOUD.EMPLEADOS;
+
+-- . Creacion del Usuario HR_CLOUD
+CREATE USER HR_CLOUD IDENTIFIED BY "IngSistema_2026_*";
+
+-- .Asignacion de cuotas y permisos
+ALTER USER HR_CLOUD QUOTA 50M ON DATA;
+ALTER USER HR_CLOUD QUOTA 50M ON DBFS_DATA;
+
+GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO HR_CLOUD;
+
+---------------------------------------------------------------------------
+
+-- 1. Crear tabla EMPLEADOS en DATA
+CREATE TABLE HR_CLOUD.EMPLEADOS(
+    ID_EMPLEADO NUMBER,
+    NOMBRE VARCHAR2(50) NOT NULL,
+    APELLIDO VARCHAR2(50) NOT NULL,
+    SALARIO NUMBER(10, 2) NOT NULL,
+    DEPARTAMENTO VARCHAR2(50) NOT NULL
+) TABLESPACE DATA;
+
+-- 2. Crear PK de EMPLEADOS en DBFS_DATA (Segregación)
+ALTER TABLE HR_CLOUD.EMPLEADOS 
+ADD CONSTRAINT PK_EMPLEADOS PRIMARY KEY (ID_EMPLEADO)
+USING INDEX TABLESPACE DBFS_DATA;
+
+-- 3. Crear tabla AUDITORIA en DATA
+CREATE TABLE HR_CLOUD.AUDITORIA(
+    ID_AUDITORIA NUMBER,
+    ID_EMPLEADO NUMBER,
+    FECHA TIMESTAMP DEFAULT SYSTIMESTAMP,
+    ACCION VARCHAR2(100),
+    DETALLE VARCHAR2(4000), -- // Detalle para almacenar pruebas de estres
+    CONSTRAINT FK_AUDITORIA_EMP FOREIGN KEY (ID_EMPLEADO) REFERENCES HR_CLOUD.EMPLEADOS(ID_EMPLEADO)
+) TABLESPACE DATA;
+
+-- 4. Crear PK de AUDITORIA en DBFS_DATA (Segregación)
+ALTER TABLE HR_CLOUD.AUDITORIA 
+ADD CONSTRAINT PK_AUDITORIA PRIMARY KEY (ID_AUDITORIA)
+USING INDEX TABLESPACE DBFS_DATA;
+
+SELECT segment_name, segment_type, tablespace_name 
+FROM USER_SEGMENTS 
+WHERE segment_name IN ('EMPLEADOS', 'AUDITORIA', 'PK_EMPLEADOS', 'PK_AUDITORIA');
+
+-- 5. Pruebas de estres
+SET SERVEROUTPUT ON;
+
+BEGIN
+  FOR i IN 1..300000 LOOP
+    INSERT INTO HR_CLOUD.AUDITORIA (
+      ID_AUDITORIA, 
+      ID_EMPLEADO, 
+      FECHA, 
+      ACCION, 
+      DETALLE
+    ) VALUES (
+      i, 
+      NULL, 
+      SYSTIMESTAMP, 
+      'CARGA_INICIAL', 
+      RPAD('X', 500, 'X')
+    );
+
+    IF MOD(i, 10000) = 0 THEN
+      COMMIT;
+    END IF;
+  END LOOP;
+  /
+  
+  
+  
+
+-- 6. Hacer commit cada 10,000 registros para evitar llenar el undo tablespace
+    IF MOD(i, 10000) = 0 THEN
+      COMMIT;
+    END IF;
+  END LOOP;
+  COMMIT;
+  DBMS_OUTPUT.PUT_LINE('Carga masiva completada con éxito.');
+EXCEPTION
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Error: Probablemente excediste la cuota de 50MB.');
+    ROLLBACK;
+END;
+/
+
+-- 7. Verificar el tamaño de la tabla AUDITORIA (Antes del borrado)
+SELECT segment_name, bytes/1024/1024 AS Tamano_MB 
+FROM USER_SEGMENTS 
+WHERE segment_name = 'AUDITORIA';
+
+-- Escenario A: DELETE
+DELETE FROM HR_CLOUD.AUDITORIA WHERE ROWNUM <= 30000;
+COMMIT;
+
+-- Verificar después de DELETE (Notarás que el tamaño NO cambia)
+SELECT segment_name, bytes/1024/1024 AS Tamano_MB 
+FROM USER_SEGMENTS 
+WHERE segment_name = 'AUDITORIA';
+
+-- Escenario B: TRUNCATE
+TRUNCATE TABLE HR_CLOUD.AUDITORIA;
+
+-- Verificar después de TRUNCATE (El tamaño bajará drásticamente)
+SELECT segment_name, bytes/1024/1024 AS Tamano_MB 
+FROM USER_SEGMENTS 
+WHERE segment_name = 'AUDITORIA';
