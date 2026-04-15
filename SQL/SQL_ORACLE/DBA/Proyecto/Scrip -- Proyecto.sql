@@ -449,3 +449,8 @@ CREATE UNIQUE INDEX IDX_DIM_CLIENTE_DNI ON dim_cliente(dni);
 
 -- Búsqueda de empleados por apellido
 CREATE INDEX IDX_DIM_EMPLEADO_APELLIDO ON dim_empleado(apellidoEmpleado);
+
+
+
+
+
