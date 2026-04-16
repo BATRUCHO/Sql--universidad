@@ -9,6 +9,7 @@ class LoginScreen(ctk.CTkFrame):
         super().__init__(parent, fg_color=COLORS["bg"])
         self.on_connect = on_connect
         self._build()
+        
 
     def _build(self):
         self.pack(fill="both", expand=True)
@@ -37,13 +38,10 @@ class LoginScreen(ctk.CTkFrame):
                      text_color=COLORS["text"]).pack(anchor="w", padx=25, pady=(15, 5))
         
         self.user_entry = ctk.CTkEntry(card, width=320, height=40,
-                                       placeholder_text="Ej: USRCONSULTA",
-                                       font=ctk.CTkFont("Courier New", 13),
-                                       fg_color=COLORS["card"],
-                                       border_color=COLORS["border"])
+                               placeholder_text="Usuario (Ej: USRCONSULTA o DW_BANCO_NOVA)",
+                               font=ctk.CTkFont("Courier New", 13))
+        
         self.user_entry.pack(padx=25)
-        # Seteamos por defecto el usuario que definimos en DB_CONFIG
-        self.user_entry.insert(0, DB_CONFIG["user"])
 
         # Entrada de Contraseña
         ctk.CTkLabel(card, text="Contraseña",
@@ -51,11 +49,9 @@ class LoginScreen(ctk.CTkFrame):
                      text_color=COLORS["text"]).pack(anchor="w", padx=25, pady=(15, 5))
         
         self.pass_entry = ctk.CTkEntry(card, width=320, height=40,
-                                       placeholder_text="••••••••••••",
-                                       font=ctk.CTkFont("Courier New", 13),
-                                       fg_color=COLORS["card"],
-                                       border_color=COLORS["border"],
-                                       show="•")
+                               placeholder_text="Ingrese su contraseña",
+                               show="•")
+        
         self.pass_entry.pack(padx=25)
 
         # Etiqueta de Estado
@@ -72,22 +68,22 @@ class LoginScreen(ctk.CTkFrame):
                       command=self._try_connect).pack(padx=25, pady=(10, 25))
 
     def _try_connect(self):
-        """Actualiza la configuración e intenta conectar con Oracle."""
-        # Capturamos lo que el usuario escribió
-        DB_CONFIG["user"]     = self.user_entry.get().strip()
-        DB_CONFIG["password"] = self.pass_entry.get().strip()
+        # Esto captura lo que TÚ escribas en la interfaz
+        usuario_ingresado = self.user_entry.get().strip()
+        clave_ingresada = self.pass_entry.get().strip()
+        
+        # Actualizamos la configuración global antes de conectar
+        DB_CONFIG["user"] = usuario_ingresado
+        DB_CONFIG["password"] = clave_ingresada
 
-        self.status_label.configure(text="Estableciendo conexión segura...", text_color=COLORS["warning"])
+        self.status_label.configure(text="Iniciando sesión segura...", text_color=COLORS["warning"])
         self.update()
 
         db = OracleDB()
         ok, msg = db.connect()
         
         if ok:
-            self.status_label.configure(text="✓ Autenticación exitosa", text_color=COLORS["success"])
-            # Pequeña pausa para que el usuario vea el éxito antes de entrar
+            self.status_label.configure(text=f"✓ Bienvenido {usuario_ingresado}", text_color=COLORS["success"])
             self.after(800, lambda: self.on_connect(db))
         else:
-            # Manejo de errores común como el ORA-02391 o credenciales inválidas
-            error_msg = "Error: Credenciales o Límite de sesiones" if "02391" in msg else f"Error: {msg[:30]}..."
-            self.status_label.configure(text=error_msg, text_color=COLORS["danger"])
+            self.status_label.configure(text="Error: Credenciales inválidas", text_color=COLORS["danger"])
