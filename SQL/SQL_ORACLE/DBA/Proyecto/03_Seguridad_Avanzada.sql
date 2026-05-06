@@ -30,6 +30,16 @@ GRANT SELECT ON VW_CLIENTE_SEGURA TO USRCONSULTA;
 /*========================================================
 2. AUDITORÍA FGA
 ========================================================*/
+BEGIN
+    DBMS_FGA.DROP_POLICY(
+        OBJECT_SCHEMA => 'DW_BANCO_NOVA',
+        OBJECT_NAME   => 'DIM_CLIENTE',
+        POLICY_NAME   => 'AUDIT_ACCESO_SENSIBLE'
+    );
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
 
 BEGIN
     DBMS_FGA.ADD_POLICY(
@@ -40,17 +50,6 @@ BEGIN
         ENABLE          => TRUE,
         STATEMENT_TYPES => 'SELECT'
     );
-END;
-/
-
-BEGIN
-    DBMS_FGA.DROP_POLICY(
-        OBJECT_SCHEMA => 'DW_BANCO_NOVA',
-        OBJECT_NAME   => 'DIM_CLIENTE',
-        POLICY_NAME   => 'AUDIT_ACCESO_SENSIBLE'
-    );
-EXCEPTION
-    WHEN OTHERS THEN NULL;
 END;
 /
 
@@ -191,7 +190,7 @@ PRUEBAS DE EJECUCION DE STORED PRODEDURE Y TRIGGER
 -- Corremos el Stored prodecure de insertar 
 BEGIN
     insertar_contracto(
-        p_id_contrato            => 2304,
+        p_id_contrato            => 2008,
         p_id_cliente             => 1,
         p_id_producto_financiero => 1,
         p_id_canal               => 1,

@@ -570,8 +570,6 @@ SHOW ERRORS;
 
 -- 6. Creación de Funciones DE VISTAS
 
-
-
 --Vista  1 de morosidad
 CREATE OR REPLACE VIEW vw_morosidad
 as 

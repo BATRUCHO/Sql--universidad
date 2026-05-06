@@ -1,1 +1,0 @@
-SELECT * FROM TABLAS_CLIENTES.cliente;

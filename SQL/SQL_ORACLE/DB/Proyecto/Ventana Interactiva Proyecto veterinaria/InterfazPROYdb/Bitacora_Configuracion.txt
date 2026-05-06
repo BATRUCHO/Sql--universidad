@@ -1,0 +1,329 @@
+═══════════════════════════════════════════════════════════════════════════════
+        BITÁCORA DE CONFIGURACIÓN — INTERFAZ GRÁFICA CON ORACLE ADB
+        Proyecto: Clínica Veterinaria | Curso: Bases de Datos | IC-02026
+        Universidad Fidélitas
+═══════════════════════════════════════════════════════════════════════════════
+
+DESCRIPCIÓN GENERAL
+───────────────────
+Esta bitácora documenta el proceso completo para configurar y ejecutar la
+interfaz gráfica desarrollada en Python que se conecta a una base de datos
+Oracle Autonomous Database (ADB) en la nube. La interfaz permite insertar
+y visualizar registros de las tablas CLIENTE, FACTURA y MASCOTA.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 1 — REQUISITOS PREVIOS
+───────────────────────────────────────────────────────────────────────────────
+
+Antes de comenzar, verificar que se tenga instalado lo siguiente:
+
+  • Python 3.10 o superior
+      Para verificar: abrir una terminal y ejecutar:
+          python --version
+
+  • Visual Studio Code (o cualquier editor de texto/IDE)
+
+  • Acceso a Internet (para conectarse a Oracle ADB en la nube)
+
+  • Credenciales de acceso a la base de datos Oracle:
+      - Usuario asignado (ejemplo: UFPROY01)
+      - Contraseña del usuario
+      - Archivo Wallet de la base de datos (.zip)
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 2 — DESCARGAR EL WALLET DE ORACLE ADB
+───────────────────────────────────────────────────────────────────────────────
+
+El Wallet es un archivo de seguridad que Oracle requiere para conectarse
+desde fuera de la nube. Se obtiene así:
+
+  1. Ingresar a https://cloud.oracle.com e iniciar sesión con la cuenta
+     del administrador del proyecto.
+
+  2. En el menú principal ir a:
+         Oracle Database → Autonomous Database
+
+  3. Seleccionar la base de datos del proyecto (BD02).
+
+  4. Hacer clic en el botón "DB Connection".
+
+  5. En la ventana que aparece, seleccionar:
+         Wallet Type: Instance Wallet
+
+  6. Hacer clic en "Download Wallet".
+
+  7. Asignar una contraseña al Wallet cuando lo solicite
+     (guardarla, se necesitará más adelante).
+
+  8. Se descargará un archivo .zip. Descomprimirlo en una carpeta local.
+     Se recomienda usar una ruta sin espacios, por ejemplo:
+         C:\BASES DE DATOS\Wallet_BD02\
+
+  IMPORTANTE: La carpeta del Wallet debe contener archivos como:
+      tnsnames.ora, sqlnet.ora, cwallet.sso, ewallet.p12, entre otros.
+      Si alguno falta, volver a descargar el Wallet.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 3 — INSTALAR LAS LIBRERÍAS DE PYTHON
+───────────────────────────────────────────────────────────────────────────────
+
+La interfaz utiliza dos librerías externas que deben instalarse antes
+de ejecutar el proyecto. Abrir una terminal (PowerShell o CMD) y ejecutar
+los siguientes comandos uno por uno:
+
+  Instalar el conector de Oracle para Python:
+      pip install oracledb
+
+  Instalar la librería para la interfaz gráfica:
+      pip install customtkinter
+
+  Para verificar que se instalaron correctamente:
+      pip show oracledb
+      pip show customtkinter
+
+  Si aparece información de cada librería (versión, autor, etc.),
+  la instalación fue exitosa.
+
+  NOTA: Si el comando pip no se reconoce, probar con:
+      python -m pip install oracledb
+      python -m pip install customtkinter
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 4 — OBTENER LOS ARCHIVOS DEL PROYECTO
+───────────────────────────────────────────────────────────────────────────────
+
+El proyecto se compone de 6 archivos Python que deben estar todos
+en la misma carpeta. Los archivos son:
+
+      DB_CONFIG.py    → Configuración de conexión y definición de tablas
+      OracleDB.py     → Clase que maneja las operaciones con la base de datos
+      Conexion.py     → Pantalla de inicio de sesión
+      Formulario.py   → Ventana para insertar nuevos registros
+      Tabla.py        → Panel que muestra los datos en pantalla
+      Main.py         → Archivo principal que inicia la aplicación
+
+  Colocar los 6 archivos en una carpeta del proyecto, por ejemplo:
+      C:\MiProyecto\InterfazVeterinaria\
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 5 — CONFIGURAR LA CONEXIÓN EN DB_CONFIG.py
+───────────────────────────────────────────────────────────────────────────────
+
+Abrir el archivo DB_CONFIG.py con VS Code y ubicar la sección DB_CONFIG
+al inicio del archivo. Editar los siguientes valores:
+
+  "user"
+      Reemplazar con el nombre del usuario Oracle asignado.
+      Ejemplo: "UFPROY01"
+
+  "password"
+      Reemplazar con la contraseña del usuario Oracle.
+
+  "dsn"
+      Es la cadena de conexión. Se puede obtener de dos formas:
+
+      Opción A — Desde el archivo tnsnames.ora del Wallet:
+          Abrir el archivo tnsnames.ora (está dentro de la carpeta
+          del Wallet) con un editor de texto. Ahí aparecen varias
+          entradas con nombres como bd02_low, bd02_medium, bd02_high.
+          Copiar la cadena completa del servicio deseado
+          (se recomienda bd02_low para pruebas).
+
+      Opción B — Desde Oracle Cloud:
+          En la pantalla "DB Connection", copiar el connection string
+          que aparece debajo del cuadro de descarga del Wallet.
+
+  "config_dir"
+      Escribir la ruta completa a la carpeta donde se descomprimió
+      el Wallet. Ejemplo:
+          r"C:\BASES DE DATOS\Wallet_BD02"
+
+  "wallet_location"
+      Misma ruta que config_dir.
+          r"C:\BASES DE DATOS\Wallet_BD02"
+
+  "wallet_password"
+      Contraseña que se asignó al Wallet en el Paso 2.
+
+  Guardar el archivo después de hacer los cambios.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 6 — VERIFICAR ACCESO A LAS TABLAS EN ORACLE
+───────────────────────────────────────────────────────────────────────────────
+
+La interfaz accede a tablas que pertenecen a otros usuarios (schemas).
+Es necesario que el administrador (usuario ADMIN) haya otorgado permisos
+de lectura e inserción al usuario del proyecto sobre esas tablas.
+
+  Los permisos necesarios son:
+      GRANT SELECT, INSERT ON TABLAS_CLIENTES.CLIENTE   TO UFPROY01;
+      GRANT SELECT, INSERT ON TABLAS_FACTURACION.FACTURA TO UFPROY01;
+      GRANT SELECT, INSERT ON TABLAS_MASCOTAS.MASCOTA   TO UFPROY01;
+
+  Para verificar los permisos, iniciar sesión en Oracle SQL Developer
+  o en la herramienta web "Database Actions" con el usuario UFPROY01
+  y ejecutar:
+      SELECT * FROM TABLAS_CLIENTES.CLIENTE;
+
+  Si aparecen resultados (o una tabla vacía) sin error, los permisos
+  están correctos. Si aparece un error ORA-00942, contactar al
+  administrador para que otorgue los permisos correspondientes.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 7 — EJECUTAR LA APLICACIÓN
+───────────────────────────────────────────────────────────────────────────────
+
+  1. Abrir VS Code.
+
+  2. Abrir la carpeta del proyecto:
+         Archivo → Abrir Carpeta → seleccionar la carpeta con los 6 archivos.
+
+  3. Abrir el archivo Main.py.
+
+  4. Ejecutar el archivo de cualquiera de estas formas:
+
+      Opción A — Desde VS Code:
+          Presionar el botón ▶ "Run Python File" en la esquina
+          superior derecha.
+
+      Opción B — Desde la terminal integrada de VS Code:
+          Ir a Terminal → Nueva Terminal y ejecutar:
+              python Main.py
+
+  5. Se abrirá la pantalla de inicio de sesión de la aplicación.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 8 — USAR LA INTERFAZ
+───────────────────────────────────────────────────────────────────────────────
+
+  PANTALLA DE LOGIN
+  ─────────────────
+  Al iniciar la aplicación aparece una pantalla de conexión con tres campos:
+
+    • Usuario Oracle:         ingresar el usuario (ejemplo: UFPROY01)
+    • Contraseña:             ingresar la contraseña del usuario
+    • DSN / Connection String: ya viene precargado desde DB_CONFIG.py,
+                               se puede modificar si es necesario
+
+  Hacer clic en "Conectar a Oracle →".
+  Si la conexión es exitosa, aparece el mensaje "✓ Conexión exitosa"
+  y la aplicación abre automáticamente la pantalla principal.
+
+  PANTALLA PRINCIPAL
+  ──────────────────
+  La pantalla principal tiene tres tabs en la parte superior:
+
+    👥 CLIENTE     — Tabla de clientes registrados
+    🧾 FACTURA     — Tabla de facturas
+    🐾 MASCOTA     — Tabla de mascotas
+
+  Al hacer clic en cualquier tab, se carga la tabla correspondiente
+  con todos los registros existentes en la base de datos.
+
+  INSERTAR UN REGISTRO
+  ────────────────────
+  1. Seleccionar el tab de la tabla donde se desea insertar.
+  2. Hacer clic en el botón verde "＋ Insertar registro".
+  3. Se abre un formulario con los campos de la tabla.
+     - El campo ID (PK) se completa automáticamente, no editarlo.
+     - Completar los demás campos.
+     - Los campos de fecha deben ingresarse en formato YYYY-MM-DD
+       (ejemplo: 2026-03-10).
+  4. Hacer clic en "✓ Guardar".
+  5. Si el insert es exitoso, el formulario se cierra y la tabla
+     se actualiza automáticamente mostrando el nuevo registro.
+
+  ACTUALIZAR LOS DATOS
+  ────────────────────
+  Si otro usuario insertó registros mientras la app está abierta,
+  hacer clic en el botón "↺ Actualizar" para recargar los datos
+  desde Oracle.
+
+  CERRAR SESIÓN
+  ─────────────
+  Hacer clic en el botón "⏻ Salir" en la esquina superior derecha
+  para desconectarse y volver a la pantalla de login.
+
+
+───────────────────────────────────────────────────────────────────────────────
+PASO 9 — SOLUCIÓN DE ERRORES COMUNES
+───────────────────────────────────────────────────────────────────────────────
+
+  ERROR: "name 'ctk' is not defined"
+  ────────────────────────────────────
+  Causa: customtkinter no está instalado o el archivo tiene un error
+         de importación.
+  Solución: Ejecutar en la terminal:
+      pip install customtkinter
+  Luego volver a correr Main.py.
+
+  ERROR: "No module named 'oracledb'"
+  ────────────────────────────────────
+  Causa: La librería oracledb no está instalada.
+  Solución: Ejecutar en la terminal:
+      pip install oracledb
+
+  ERROR: "ORA-01017: invalid username/password"
+  ──────────────────────────────────────────────
+  Causa: Las credenciales del usuario son incorrectas.
+  Solución: Verificar usuario y contraseña en DB_CONFIG.py o en la
+  pantalla de login. Confirmar con el administrador del proyecto.
+
+  ERROR: "ORA-00942: table or view does not exist"
+  ──────────────────────────────────────────────────
+  Causa: El usuario no tiene permisos sobre las tablas de otros schemas.
+  Solución: El administrador debe ejecutar los GRANT mencionados en
+  el Paso 6.
+
+  ERROR: "DPY-6000" o problemas con el Wallet
+  ─────────────────────────────────────────────
+  Causa: La ruta del Wallet en DB_CONFIG.py es incorrecta o el Wallet
+         está incompleto.
+  Solución:
+    1. Verificar que la carpeta del Wallet contenga los archivos
+       tnsnames.ora, sqlnet.ora y cwallet.sso.
+    2. Verificar que las rutas config_dir y wallet_location en
+       DB_CONFIG.py apunten exactamente a esa carpeta.
+    3. Asegurarse de usar r"..." (raw string) en las rutas de Windows
+       para evitar problemas con las barras invertidas.
+
+  ERROR: La app se abre pero la tabla aparece vacía
+  ──────────────────────────────────────────────────
+  Causa: La conexión fue exitosa pero no hay registros en la tabla,
+         o los permisos de SELECT no están otorgados.
+  Solución: Verificar en Oracle SQL Developer que existan registros
+  y que el usuario tenga SELECT sobre esa tabla.
+
+
+───────────────────────────────────────────────────────────────────────────────
+NOTAS FINALES
+───────────────────────────────────────────────────────────────────────────────
+
+  • Los 6 archivos del proyecto SIEMPRE deben estar en la misma carpeta.
+    Si se mueve solo uno, el proyecto no funcionará.
+
+  • El archivo que se ejecuta siempre es Main.py, nunca los otros.
+
+  • No compartir el archivo DB_CONFIG.py con personas externas al grupo,
+    ya que contiene las credenciales de acceso a la base de datos.
+
+  • Si se cambia la contraseña del usuario Oracle, actualizar el valor
+    "password" en DB_CONFIG.py.
+
+  • La aplicación fue desarrollada y probada con:
+        Python      3.10+
+        oracledb    2.x
+        customtkinter 5.x
+        Oracle ADB  (Autonomous Database - servicio Always Free)
+
+═══════════════════════════════════════════════════════════════════════════════
+                    Fin de la bitácora de configuración
+═══════════════════════════════════════════════════════════════════════════════
