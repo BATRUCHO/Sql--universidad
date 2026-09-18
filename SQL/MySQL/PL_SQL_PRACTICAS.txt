@@ -1,0 +1,114 @@
+Nivel 1: Fundamentos y Filtros Críticos (Fácil)
+Enfoque: Familiarizarse con las tablas, limpiar datos y aplicar lógica booleana básica.
+
+Clientes VIP Iniciales: Selecciona el nombre, apellido y correo de todos los clientes cuyo estado sea 'Activo' y se hayan registrado en el primer trimestre de 2024.
+
+Identificación de Cuentas Clave: Muestra el número de cuenta y el saldo de todas las cuentas de tipo 'Inversion' o 'Corriente' que tengan un saldo superior a $10,000.
+
+Auditoría de Canales: Encuentra todas las transacciones de la tabla transacciones cuya descripción detallada contenga la palabra 'cajero'.
+
+Localización de Infraestructura: Lista las sucursales que no pertenezcan a la ciudad de 'San José'.
+
+Estructura de Costos (Personal): Muestra los empleados que ganan un salario entre $1,500 y $3,000 mensuales.
+
+Monitoreo de Anomalías: Encuentra los clientes que no tienen registrado un número de teléfono (o donde este campo sea nulo/vacío).
+
+Cronología de Contrataciones: Lista los nombres y puestos de los empleados ordenados desde el más antiguo hasta el más reciente en la organización.
+
+Catálogo de Operaciones: Muestra los tipos de transacción que son de naturaleza 'Debito', ordenados alfabéticamente por su nombre.
+
+Cuentas en Riesgo: Selecciona las cuentas que estén en estado 'Congelada' o 'Cerrada' y muestra su último saldo registrado.
+
+Volumen Único de Transacciones: Obtener los diferentes montos de transacciones (valores únicos/distintos) que se han realizado por un valor mayor a $5,000.
+
+Nivel 2: Agregaciones y Métricas de Negocio (Medio-Bajo)
+Enfoque: Empezar a pensar como Analista de Datos usando GROUP BY, HAVING y funciones agregadas (SUM, AVG, COUNT).
+
+Balance por Tipo de Cuenta: Calcula el saldo total y el saldo promedio para cada tipo_cuenta.
+
+Concentración de Clientes: Cuenta cuántos clientes se han registrado por cada estado (Activo, Inactivo, Bloqueado).
+
+Masa Salarial por Sucursal: Agrupa a los empleados por su sucursal_id y calcula el gasto total en salarios de cada una.
+
+Frecuencia de Transacciones: Determina cuál es el tipo_id de transacción que más veces se ha ejecutado en el banco (conteo de registros).
+
+Filtro de Cuentas Premium: Muestra los cliente_id que poseen un saldo total acumulado (sumando todas sus cuentas) superior a $20,000.
+
+Ticket Promedio de Débito: Calcula el monto promedio exclusivamente para las transacciones que restan fondos (Naturaleza 'Debito'). Pista: Necesitarás asociar el catálogo.
+
+Productividad de Sucursales: Encuentra el número de cuentas abiertas en cada sucursal_id, pero solo muestra aquellas sucursales que tengan más de 2 cuentas asignadas.
+
+Rangos de Operación: Encuentra el monto mínimo y máximo registrado en las transacciones para la cuenta con el cuenta_id = 1.
+
+Antigüedad Promedio: Calcula el promedio de años o días que llevan los empleados en la empresa según su fecha de contratación.
+
+Auditoría de Correos: Cuenta cuántos clientes utilizan dominios corporativos o comerciales tradicionales (por ejemplo, cuántos terminan en @email.com).
+
+Nivel 3: Relaciones e Integridad de Datos (Medio - JOINS)
+Enfoque: Cruzar tablas para aportar contexto de negocio. Combinar dimensiones con tablas de hechos.
+
+Perfil Completo del Cliente: Genera un reporte que muestre el nombre completo del cliente (concatenado), su número de cuenta y el nombre de la sucursal donde la abrió.
+
+Monitoreo de Flujo de Caja: Lista todas las transacciones mostrando: número de cuenta, nombre del cliente, tipo de transacción (Depósito, Retiro, etc.) y el monto.
+
+Organigrama Operativo (Self-Join): Muestra el nombre del empleado junto con el nombre de su supervisor directo. Si no tiene supervisor, debe aparecer "Alta Gerencia".
+
+Rentabilidad Geográfica: Muestra la suma total de los saldos de las cuentas agrupada por la ciudad de la sucursal.
+
+Alerta de Inactividad Analítica: Encuentra los nombres de los clientes que no han realizado ninguna transacción histórica en el sistema.
+
+Reporte de Nómina: Muestra el nombre del empleado, su puesto, su salario y el nombre de la sucursal física donde trabaja.
+
+Análisis de Depósitos: Filtra e identifica los nombres de los clientes y los montos de aquellas transacciones que fueron estrictamente del tipo 'Depósito'.
+
+Saldos por Sucursal y Tipo: Desglosa el saldo total acumulado agrupando por el nombre de la sucursal y el tipo de cuenta.
+
+Clientes Bloqueados con Fondos: Lista los nombres, identificaciones y saldos de aquellos clientes cuyo estado actual es 'Bloqueado' pero que aún conservan dinero en sus cuentas.
+
+Auditoría de Transacciones Altas: Muestra los detalles de las transacciones (fecha, monto, descripción) junto con el correo electrónico del cliente titular, para montos superiores a $10,000.
+
+Nivel 4: Subconsultas y Lógica Condicional (Medio-Avanzado)
+Enfoque: Modularización de consultas, subconsultas en WHERE / FROM, y creación de campos calculados con CASE.
+
+Segmentación ABC de Clientes: Utiliza CASE para clasificar las cuentas: si el saldo es mayor a $50,000 es 'Platinum', entre $10,000 y $50,000 es 'Gold', y menor es 'Regular'.
+
+Superando el Promedio: Encuentra todas las cuentas cuyo saldo sea estrictamente mayor que el saldo promedio de todas las cuentas del banco.
+
+El Empleado Mejor Pagado por Sucursal: Escribe una consulta que identifique a los empleados que ganan el salario máximo dentro de su respectiva sucursal.
+
+Clientes Multi-cuenta: Mediante una subconsulta en la cláusula WHERE o HAVING, identifica a los clientes que poseen más de una cuenta bancaria activa.
+
+KPI de Balance de Transacciones: Crea una consulta que muestre el cuenta_id y una columna calculada llamada 'Impacto_Total' que sume los montos si la naturaleza es 'Credito' y reste los montos si es 'Debito'.
+
+Sucursales sin Personal Comercial: Identifica las sucursales que no tienen a ningún empleado asignado con el puesto de 'Asesor Financiero'.
+
+Última Actividad Registrada: Para cada cuenta, muestra el número de cuenta y la fecha de su transacción más reciente utilizando una subconsulta.
+
+Verificación de Saldos Coherentes: Genera una bandera con CASE que evalúe si el saldo actual de la cuenta es menor a cero (Alerta: Sobregiro), igual a cero (Cuenta Vacía) o mayor a cero (Saludable).
+
+Subconsulta Correlacionada de Depósitos: Muestra las transacciones cuyo monto sea superior al depósito promedio de esa misma cuenta.
+
+Identificación de Supervisores Activos: Lista los datos de los empleados que actúan como supervisores de otros, asegurándote de no duplicar registros en el resultado.
+
+Nivel 5: Funciones de Ventana y Analítica Avanzada (Difícil)
+Enfoque: Preparación para Data Engineering y Business Intelligence utilizando OVER, PARTITION BY y métricas acumulativas.
+
+Ranking de Saldos Internos: Utiliza ROW_NUMBER() o DENSE_RANK() para clasificar las cuentas de mayor a menor saldo, pero reiniciando el conteo (partición) por cada sucursal.
+
+Histórico Acumulado (Running Total): Calcula el saldo acumulado histórico de las transacciones para cada cuenta, ordenado cronológicamente por fecha_hora.
+
+Crecimiento Intermensual (Lead/Lag): Para un análisis de tendencias, muestra el monto de la transacción actual y, en una columna contigua, el monto de la transacción anterior de la misma cuenta.
+
+Distribución Percentil: Encuentra el percentil en el que se ubica el salario de cada empleado con respecto a la nómina global de la empresa.
+
+Porcentaje de Aportación Territorial: Muestra el saldo de cada cuenta y, en otra columna, qué porcentaje representa ese saldo con respecto al total de dinero depositado en su misma sucursal.
+
+Promedio Móvil Financiero: Calcula el promedio móvil de los montos de las últimas 3 transacciones para cada cuenta bancaria.
+
+Identificación del Primer Producto: Determina cuál fue la primera cuenta bancaria que abrió cada cliente en base a la fecha_apertura, utilizando funciones de ranking.
+
+Diferencia contra el Líder: Muestra el salario de cada empleado y la diferencia económica que existe entre su salario y el del empleado que más gana en su misma sucursal.
+
+Agrupación Temporal de Transacciones: Clasifica las transacciones por rangos horarios utilizando funciones de fecha y determina en qué bloques del día (Mañana, Tarde, Noche) se mueve más dinero.
+
+Consolidación de Auditoría Final (Datamart Mental): Construye una consulta maestra que devuelva un resumen por cliente con las siguientes columnas: ID, Nombre Completo, Cantidad de Cuentas Activas, Saldo Total Combinado, Monto de la Transacción Más Alta realizada, y el Nombre de la Sucursal donde prefiere operar (donde tiene más cuentas).

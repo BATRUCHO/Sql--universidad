@@ -1,0 +1,64 @@
+Bloque 1: Funciones y Lógica Condicional (Fácil)
+Enfoque: Estructuras IF-THEN-ELSE, paso de parámetros, retorno de tipos de datos simples y cálculos de negocio.
+
+Calculadora de Intereses de Inversión: Crea una función que reciba el saldo de una cuenta y el tipo de cuenta. Si es 'Inversion', devuelve el saldo simulando un rendimiento del 5%; si es de 'Ahorros', un 2%; de lo contrario, 0.
+
+Formateador de Identificación: Diseña una función que reciba la cadena de caracteres de la identificación de un cliente y la devuelva con un formato estándar (ej: cambiar 101110111 a 1-0111-0111).
+
+Validador de Estado de Cuenta: Desarrollar una función que reciba el cuenta_id y devuelva un booleano o un entero (1 o 0) que indique si la cuenta está apta para operar (Estado 'Activa').
+
+Conversor de Moneda Estático: Crea una función que reciba un monto en colones o dólares y retorne la conversión utilizando un tipo de cambio fijo para análisis financiero rápido.
+
+Evaluador de Categoría de Salario: Una función que reciba el ID de un empleado y retorne un texto ('Junior', 'Semi-Senior', 'Senior') basado en rangos de salario preestablecidos.
+
+Bloque 2: Procedimientos Almacenados y Parámetros (Medio-Bajo)
+Enfoque: Modularización, operaciones INSERT/UPDATE controladas, manejo de parámetros IN y OUT.
+
+Registro Seguro de Clientes: Crea un procedimiento para insertar un nuevo cliente. Debe verificar primero si la identificación ya existe antes de intentar el INSERT para evitar excepciones del motor.
+
+Actualización de Datos de Contacto: Diseña un procedimiento que reciba el ID del cliente, un nuevo teléfono y un nuevo correo, y actualice la tabla correspondiente de manera segura.
+
+Asignación de Supervisor: Escribe un procedimiento que reciba el ID de un empleado y el ID de su nuevo supervisor, validando que el supervisor trabaje en la misma sucursal.
+
+Cierre de Cuenta Programado: Un procedimiento que cambie el estado de una cuenta a 'Cerrada' y ponga su saldo en 0, pero solo si el saldo actual al momento de la llamada es exactamente 0.
+
+Extracción de Métricas de Sucursal (Parámetros OUT): Crea un procedimiento que reciba el sucursal_id y devuelva mediante dos parámetros de salida (OUT): la cantidad de cuentas que posee y la suma total de sus saldos.
+
+Bloque 3: Cursores, Bucles y Control de Flujo (Medio - Avanzado)
+Enfoque: Manipulación de conjuntos de datos fila por fila usando CURSOR, bucles (LOOP, WHILE, FOR) y lógica de procesamiento masivo.
+
+Aplicación de Intereses Mensuales (Batch Processing): Diseña un procedimiento que recorra mediante un cursor todas las cuentas de tipo 'Ahorros' activas, calcule el 0.5% de su saldo actual e inserte un registro en la tabla transacciones para cada una por concepto de 'Intereses Ganados'.
+
+Bono de Rendimiento Navideño: Un procedimiento que recorra a los empleados. A los que tengan un salario inferior al promedio de su sucursal, se les aumentará un 10% mediante un bucle controlado.
+
+Auditoría de Saldos Desconectados: Crea un script o procedimiento con un cursor que compare la suma de todas las transacciones históricas de cada cuenta contra su campo saldo actual. Si hay discrepancia, debe imprimir el ID de la cuenta en pantalla.
+
+Reporte de Alertas por Bloqueo: Recorre con un cursor los clientes con estado 'Bloqueado'. Por cada uno, busca si tienen transacciones mayores a $1,000 en el último mes y genera un log interno.
+
+Clasificación Masiva de Puestos: Un procedimiento que analice el historial de contrataciones y actualice el puesto de los empleados a "Senior [Puesto Actual]" si cumplen con más de un número determinado de años en la empresa.
+
+Bloque 4: Disparadores (Triggers) para Automatización y Reglas de Negocio (Medio-Avanzado)
+Enfoque: Automatizar acciones antes (BEFORE) o después (AFTER) de eventos INSERT, UPDATE o DELETE. Uso de pseudotablas/variables NEW y OLD.
+
+Cajero Automático Virtual (Sincronización de Saldo): Escribe un trigger AFTER INSERT en la tabla transacciones. Cada vez que se registre un movimiento, el trigger debe actualizar automáticamente el campo saldo de la tabla cuentas, sumando si la naturaleza del tipo de transacción es 'Credito' o restando si es 'Debito'.
+
+Prevención de Sobregiros: Diseña un trigger BEFORE INSERT en la tabla transacciones que impida la inserción de un retiro o transferencia enviada si el monto de la transacción supera el saldo disponible actual de la cuenta, lanzando un mensaje de error personalizado.
+
+Bitácora de Seguridad de Clientes: Crea una tabla espejo llamada auditoria_clientes y genera un trigger AFTER UPDATE en clientes que guarde el usuario que hizo el cambio, la fecha, el valor antiguo (OLD) del correo/teléfono y el valor nuevo (NEW).
+
+Protección de Salarios: Implementa un trigger BEFORE UPDATE en la tabla empleados que impida que el salario de un empleado sea reducido. Si el nuevo salario es menor al anterior, debe restaurar el valor original o lanzar un error.
+
+Restricción de Operaciones en Cuentas Cerradas: Desarrolla un trigger BEFORE INSERT en transacciones que verifique el estado de la cuenta. Si la cuenta está 'Cerrada' o 'Congelada', debe bloquear la transacción inmediatamente.
+
+Bloque 5: Transacciones, Integridad Avanzada y Casos Complejos (Difícil)
+Enfoque: Control transaccional (COMMIT, ROLLBACK), manejo de excepciones robusto y lógica financiera real.
+
+Módulo de Transferencias Interbancarias Protegidas: Diseña un procedimiento almacenado llamado sp_transferir_fondos que reciba cuenta_origen, cuenta_destino y monto. Debe restar el dinero del origen, sumarlo al destino y registrar ambas transacciones (envío y recepción). Todo debe ocurrir dentro de una transacción segura; si falla un paso, se debe hacer un ROLLBACK completo.
+
+Congelamiento por Sospecha de Fraude: Crea un procedimiento que analice si una cuenta específica ha realizado más de 3 transacciones de tipo 'Retiro' consecutivas en menos de 5 minutos. De ser así, debe cambiar el estado de la cuenta a 'Congelada' y registrar el incidente.
+
+Cierre de Ciclo Fiscal Financiero: Desarrolla un proceso complejo que mueva todas las transacciones con más de un año de antigüedad a una tabla histórica de archivo (historico_transacciones), asegurando la integridad referencial y liberando espacio de la tabla operativa principal dentro de un bloque transaccional controlado.
+
+Simulador de Crédito con Tabla de Amortización: Escribe un procedimiento que reciba un monto de préstamo solicitado, una tasa de interés y un plazo en meses. Utilizando un bucle, debe calcular la cuota mensual e imprimir línea por línea el desglose de lo que sería la tabla de amortización (Mes, Cuota, Interés, Amortización, Saldo Pendiente).
+
+Orquestador de Nómina Centralizada: Crea un procedimiento maestro que calcule el pago mensual de toda la planilla del banco. Debe deducir impuestos de forma condicional según el rango salarial de cada empleado, verificar que la sucursal central tenga fondos suficientes para cubrir el gasto total, realizar la transferencia masiva simulada y guardar un reporte final de ejecución exitosa.
