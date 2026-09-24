@@ -1,0 +1,155 @@
+use finan_db;
+-- ¿Cuál es la tendencia de gasto a corto plazo de cada cuenta en cada transacción, comparando el monto actual 
+-- frente al promedio smoothing de sus últimas 3 transacciones (incluyendo la actual)?
+WITH PromediosMovimientos AS (
+    SELECT tr.cuenta_id,
+        tr.transaccion_id,
+        tr.monto,
+        tr.fecha_hora,
+        AVG(tr.monto) OVER (
+            -- CTE promedio_ultimas_3_transacciones
+            PARTITION BY tr.cuenta_id -- se divide por cuenta_id
+            ORDER BY tr.fecha_hora ASC,
+                tr.transaccion_id -- ordenado por fecha_hora y transaccion_id para evitar empates
+                ROWS BETWEEN 2 PRECEDING AND CURRENT ROW -- promedio de las 2 transacciones anteriores y la actual // se usa la clausula ROWS PARA CREAR UNA ventana DESLIZANTE DE 3 FILAS
+        ) AS promedio_ultimas_3_transacciones
+    FROM transacciones tr
+)
+SELECT pm.cuenta_id,
+    pm.transaccion_id,
+    pm.monto,
+    pm.promedio_ultimas_3_transacciones,
+    CASE
+        -- Se evalua la tendencia de gasto a corto plazo
+        WHEN pm.monto > pm.promedio_ultimas_3_transacciones THEN 'Alto' -- si el monto es mayor al promedio de las ultimas 3 transacciones
+        WHEN pm.monto < pm.promedio_ultimas_3_transacciones THEN 'Bajo' -- si el monto es menor al promedio de las ultimas 3 transacciones
+        ELSE 'Igual' -- si el monto es igual al promedio de las ultimas 3 transacciones
+    END AS tendencia_gasto_corto_plazo
+FROM PromediosMovimientos pm
+ORDER BY pm.cuenta_id,
+    pm.fecha_hora desc;
+-- se ordena de mayor a menor
+--------------------------------------- SEGUNDA PREGUNTA ----------------------------------------- 
+-- prom_movil_con_actual: El promedio de las 2 anteriores + la actual (tu ventana original).
+-- prom_movil_historico_puro: El promedio exclusivo de las 3 transacciones anteriores (sin incluir la transacción actual).
+WITH PromediosMovimientos AS (
+    SELECT cuenta_id,
+        transaccion_id,
+        monto,
+        AVG(monto) OVER (
+            PARTITION BY cuenta_id
+            ORDER BY fecha_hora ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) AS promedio_ultimas_3_transacciones
+    FROM transacciones
+)
+SELECT pm.cuenta_id,
+    pm.transaccion_id,
+    pm.monto,
+    pm.promedio_ultimas_3_transacciones,
+    CASE
+        WHEN pm.monto > pm.promedio_ultimas_3_transacciones THEN 'Alto'
+        WHEN pm.monto < pm.promedio_ultimas_3_transacciones THEN 'Bajo'
+        ELSE 'Igual'
+    END AS tendencia_gasto_corto_plazo
+FROM PromediosMovimientos pm
+ORDER BY pm.cuenta_id,
+    pm.fecha_hora;
+with bloque_horarios as (
+    SELECT tr.transaccion_id,
+        tr.fecha_hora,
+        tr.monto,
+        tt.naturaleza,
+        CASE
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '00:00:00' AND '05:59:59' THEN 'madrugada'
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '06:00:00' AND '11:59:59' THEN 'mañana'
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '12:00:00' AND '17:59:59' THEN 'tarde'
+            ELSE 'noche'
+        END AS bloque_horario
+    FROM transacciones tr
+        INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
+)
+select *
+from bloque_horarios
+where bloque_horselect *
+from bloque_horarios
+where bloque_horario = 'mañanaSELECT CASE
+        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 00 :00 :00 ' AND ' 05 :59 :59 ' THEN ' madrugada '
+        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 06 :00 :00 ' AND ' 11 :59 :59 ' THEN ' mañana '
+        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 12 :00 :00 ' AND ' 17 :59 :59 ' THEN ' tarde '
+        ELSE ' noche '
+    END AS bloque_horario,
+    SUM(
+        CASE
+            WHEN tt.naturaleza = ' credito ' THEN tr.monto
+            ELSE - tr.monto
+        END
+    ) AS monto_neto
+FROM transacciones tr
+    INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
+GROUP BY bloque_horario
+ORDER BY monto_neto DESC;
+with bloque_horarios as (
+    SELECT tr.transaccion_id,
+        tr.fecha_hora,
+        tr.monto,
+        tt.naturaleza,
+        CASE
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 00 :00 :00 ' AND ' 05 :59 :59 ' THEN ' madrugada '
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 06 :00 :00 ' AND ' 11 :59 :59 ' THEN ' mañana '
+            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 12 :00 :00 ' AND ' 17 :59 :59 ' THEN ' tarde '
+            ELSE ' noche '
+        END AS bloque_horario
+    FROM transacciones tr
+        INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
+)';
+ario = 'mañana';
+WITH VentanaMovimientos AS (
+    SELECT tr.cuenta_id,
+        tr.transaccion_id,
+        tr.monto,
+        tr.fecha_hora,
+        -- Promedio móvil simple: incluye transacciones anteriores y la actual.
+        -- La ventana se define por filas (ROWS BETWEEN 2 PRECEDING AND CURRENT ROW).
+        -- Esto hace que para la fila N, se incluyan las filas N, N-1 y N-2.
+        -- Como el ORDER BY es ASC, las filas N-1 y N-2 son efectivamente las 2 transacciones anteriores.
+        AVG(tr.monto) OVER (
+            PARTITION BY tr.cuenta_id
+            ORDER BY tr.fecha_hora ASC,
+                tr.transaccion_id ASC ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) AS prom_movil_con_actual,
+        -- Promedio móvil histórico puro: considera solo las transacciones ANTERIORES.
+        -- La ventana se define por el rango de fechas relativo (RANGE BETWEEN INTERVAL 3 MONTH PRECEDING AND INTERVAL 1 MICROSECOND PRECEDING).
+        -- Esto hace que se incluyan todas las transacciones que ocurrieron en los 3 meses anteriores a la fecha de la fila actual.
+        -- Usamos INTERVAL 1 MICROSECOND PRECEDING para excluir la fila actual, ya que RANGE trabaja con valores de la columna ORDER BY (fecha_hora).
+        AVG(tr.monto) OVER (
+            PARTITION BY tr.cuenta_id
+            ORDER BY tr.fecha_hora ASC,
+                tr.transaccion_id ASC ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING
+        ) AS prom_movil_historico_puro,
+        -- Conteo de elementos reales de la ventana
+        count(tr.monto) over (
+            partition by tr.cuenta_id
+            order by tr.fecha_hora asc,
+                tr.transaccion_id asc rows between 3 preceding and 1 PRECEDING
+        ) as tx_previas_disponibles
+    FROM transacciones tr
+)
+SELECT vm.cuenta_id,
+    vm.transaccion_id,
+    vm.monto,
+    vm.fecha_hora,
+    vm.prom_movil_con_actual,
+    coalesce(vm.prom_movil_historico_puro, 0) AS prom_movil_historico_puro,
+    vm.tx_previas_disponibles,
+    CASE
+        WHEN vm.prom_movil_historico_puro IS NULL THEN 'Sin historial previo'
+        when vm.monto > (vm.prom_movil_historico_puro * 1.5) then 'Anomalia / Gasto inusualmente alto'
+        when vm.monto > vm.prom_movil_historico_puro THEN 'Alto, por ensima de la media'
+        when vm.monto < (vm.prom_movil_historico_puro * 0.5) THEN 'Anomalia / Gasto inusualmente bajo'
+        when vm.monto < vm.prom_movil_historico_puro THEN 'Bajo, por debajo de la media'
+        ELSE 'Igual al historial'
+    END AS evaluacion_riesgo
+FROM VentanaMovimientos vm
+ORDER BY vm.cuenta_id,
+    vm.fecha_hora ASC;
+--------------------------------------- TERCERA PREGUNTA -----------------------------------------
