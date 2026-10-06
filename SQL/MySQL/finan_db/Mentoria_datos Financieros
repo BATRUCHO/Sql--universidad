@@ -32,77 +32,6 @@ ORDER BY pm.cuenta_id,
 --------------------------------------- SEGUNDA PREGUNTA ----------------------------------------- 
 -- prom_movil_con_actual: El promedio de las 2 anteriores + la actual (tu ventana original).
 -- prom_movil_historico_puro: El promedio exclusivo de las 3 transacciones anteriores (sin incluir la transacción actual).
-WITH PromediosMovimientos AS (
-    SELECT cuenta_id,
-        transaccion_id,
-        monto,
-        AVG(monto) OVER (
-            PARTITION BY cuenta_id
-            ORDER BY fecha_hora ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-        ) AS promedio_ultimas_3_transacciones
-    FROM transacciones
-)
-SELECT pm.cuenta_id,
-    pm.transaccion_id,
-    pm.monto,
-    pm.promedio_ultimas_3_transacciones,
-    CASE
-        WHEN pm.monto > pm.promedio_ultimas_3_transacciones THEN 'Alto'
-        WHEN pm.monto < pm.promedio_ultimas_3_transacciones THEN 'Bajo'
-        ELSE 'Igual'
-    END AS tendencia_gasto_corto_plazo
-FROM PromediosMovimientos pm
-ORDER BY pm.cuenta_id,
-    pm.fecha_hora;
-with bloque_horarios as (
-    SELECT tr.transaccion_id,
-        tr.fecha_hora,
-        tr.monto,
-        tt.naturaleza,
-        CASE
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '00:00:00' AND '05:59:59' THEN 'madrugada'
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '06:00:00' AND '11:59:59' THEN 'mañana'
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN '12:00:00' AND '17:59:59' THEN 'tarde'
-            ELSE 'noche'
-        END AS bloque_horario
-    FROM transacciones tr
-        INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
-)
-select *
-from bloque_horarios
-where bloque_horselect *
-from bloque_horarios
-where bloque_horario = 'mañanaSELECT CASE
-        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 00 :00 :00 ' AND ' 05 :59 :59 ' THEN ' madrugada '
-        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 06 :00 :00 ' AND ' 11 :59 :59 ' THEN ' mañana '
-        WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 12 :00 :00 ' AND ' 17 :59 :59 ' THEN ' tarde '
-        ELSE ' noche '
-    END AS bloque_horario,
-    SUM(
-        CASE
-            WHEN tt.naturaleza = ' credito ' THEN tr.monto
-            ELSE - tr.monto
-        END
-    ) AS monto_neto
-FROM transacciones tr
-    INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
-GROUP BY bloque_horario
-ORDER BY monto_neto DESC;
-with bloque_horarios as (
-    SELECT tr.transaccion_id,
-        tr.fecha_hora,
-        tr.monto,
-        tt.naturaleza,
-        CASE
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 00 :00 :00 ' AND ' 05 :59 :59 ' THEN ' madrugada '
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 06 :00 :00 ' AND ' 11 :59 :59 ' THEN ' mañana '
-            WHEN CAST(tr.fecha_hora AS TIME) BETWEEN ' 12 :00 :00 ' AND ' 17 :59 :59 ' THEN ' tarde '
-            ELSE ' noche '
-        END AS bloque_horario
-    FROM transacciones tr
-        INNER JOIN tipos_transaccion tt ON tt.tipo_id = tr.tipo_id
-)';
-ario = 'mañana';
 WITH VentanaMovimientos AS (
     SELECT tr.cuenta_id,
         tr.transaccion_id,
@@ -153,3 +82,82 @@ FROM VentanaMovimientos vm
 ORDER BY vm.cuenta_id,
     vm.fecha_hora ASC;
 --------------------------------------- TERCERA PREGUNTA -----------------------------------------
+-- Población: solo débitos.
+-- Orden: transacciones cronológicamente por cuenta.
+-- Referencia: las 3 transacciones anteriores.
+-- La transacción actual no participa en su propia referencia.
+-- Promedio histórico: media de esas 3 transacciones.
+-- Desviación absoluta: actual − promedio.
+-- Desviación relativa: (actual − promedio) / promedio.
+-- Menos de 3 transacciones anteriores: no hay suficiente historial → NULL.
+-- Promedio histórico = 0: desviación relativa no calculable → NULL y clasificación separada.
+-- Una desviación alta no equivale automáticamente a una anomalía: todavía necesitaríamos definir un criterio para determinar qué magnitud consideramos inusual.
+WITH promedio_historico as (
+    SELECT transaccion_id,
+        cuenta_id,
+        monto,
+        fecha_hora,
+        AVG(monto) OVER (
+            -- se divide por cuenta_id para separar transacciones por cuenta
+            partition BY cuenta_id
+            order by fecha_hora asc,
+                transaccion_id asc rows between 3 preceding and 1 preceding -- se ordenan por fecha_hora y transaccion_id para evitar empates
+        ) as promedio_historico_puro
+    FROM transacciones tr
+        inner join tipos_transaccion tt on tr.tipo_id = tt.tipo_id -- se unen las tablas transacciones y tipos_transaccion
+    where tt.naturaleza = 'debito' -- se filtran solo las transacciones de tipo debito
+),
+desviacion_absoluta as (
+    SELECT p.cuenta_id,
+        p.transaccion_id,
+        p.monto,
+        p.fecha_hora,
+        p.promedio_historico_puro,
+        CASE
+            WHEN (p.monto - p.promedio_historico_puro) > 0 THEN (p.monto - p.promedio_historico_puro) -- si el monto es mayor al promedio historico
+            ELSE (p.promedio_historico_puro - p.monto) -- si el monto es menor al promedio historico
+        END AS desviacion_absoluta
+    FROM promedio_historico p
+),
+desviacion_relativa as (
+    SELECT d.cuenta_id,
+        d.transaccion_id,
+        d.monto,
+        d.fecha_hora,
+        d.promedio_historico_puro,
+        d.desviacion_absoluta,
+        (d.monto - d.promedio_historico_puro) / d.promedio_historico_puro as desviacion_relativa -- se divide la desviacion absoluta entre el promedio historico para obtener la desviacion relativa
+    FROM desviacion_absoluta d
+)
+SELECT r.cuenta_id,
+    r.transaccion_id,
+    r.monto,
+    r.fecha_hora,
+    r.promedio_historico_puro,
+    r.desviacion_absoluta,
+    r.desviacion_relativa,
+    CASE
+        WHEN r.desviacion_relativa > 0.5 THEN 'Gasto significativamente alto' -- si la desviacion relativa es mayor a 0.5
+        WHEN r.desviacion_relativa < -0.5 THEN 'Gasto significativamente bajo' -- si la desviacion relativa es menor a -0.5
+        ELSE 'Gasto normal' -- si la desviacion relativa es mayor a -0.5 y menor a 0.5
+    END AS clasificacion
+FROM desviacion_relativa r
+WHERE r.promedio_historico_puro > 0 -- se filtran las transacciones que tienen un promedio historico mayor a 0
+ORDER BY r.cuenta_id,
+    r.fecha_hora ASC;
+--GRANULARIDAD:
+--Una fila representa una transaccion individual
+--POBLACIÓN:
+--La variable se calcula sobre solo transacciones de débito.
+--REFERENCIA:
+--El gasto actual se compara contra el gasto promedio de las 3 transacciones anteriores.
+--DESVIACIÓN RELATIVA:
+--Representa la diferencia entre el gasto actual y el gasto promedio de las 3 transacciones anteriores, dividido por el gasto promedio de las 3 transacciones anteriores.
+--CLASIFICACIÓN:
+--Un gasto significativamente alto significa que el gasto actual es mayor al promedio de las 3 transacciones anteriores en un 50% más.
+--LIMITACIÓN:
+--La variable mide cuánto se desvía una transacción de débito respecto al promedio de las tres transacciones débito anteriores de la misma cuenta. 
+--La desviación relativa permite expresar esa diferencia proporcionalmente y conservar su dirección. 
+--La clasificación utiliza un umbral de ±50% para identificar gastos significativamente altos o bajos. 
+--Sin embargo, esta clasificación no constituye por sí sola una prueba estadística de anomalía.
+--------------------------------------- CUARTA PREGUNTA -----------------------------------------
